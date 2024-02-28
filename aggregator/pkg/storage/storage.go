@@ -17,11 +17,11 @@ type Pagination struct {
 
 // Interface Задаёт контракт на работу с БД.
 type Interface interface {
-	Posts(n int) ([]Post, error)                                                   // Получение последних новостей.
-	AddPost(t Post) error                                                          // Добавление новости в БД.
+	Posts(limit, offset int) ([]Post, error)                                       // Получение последних новостей.
+	AddPost(p Post) error                                                          // Добавление новости в БД.
 	PostSearchILIKE(keyWord string, limit, offset int) ([]Post, Pagination, error) // Поиск по заголовку
 	PostsCreation([]Post) error                                                    // Создание n-ого кол-ва публикаций
-	PostDetal(id int) (Post, error)                                                // Детальный вывод
+	PostDetail(id int) (Post, error)                                               // Детальный вывод
 	CreateGonewsTable() error
 	DropGonewsTable() error
 }
