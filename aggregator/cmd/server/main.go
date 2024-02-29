@@ -30,12 +30,8 @@ func init() {
 	}
 }
 
-//const (
-//	configURL = "./cmd/server/config.json"
-//)
-
 func main() {
-	filename := filepath.Join("aggregator", "cmd", "server", "config.json")
+	configURL := filepath.Join("aggregator", "cmd", "server", "config.json")
 	// Создаём объект сервера.
 	var srv server
 	cfg := config.New()
@@ -61,7 +57,7 @@ func main() {
 	chanErrs := make(chan error)
 	// Чтение RSS-лент из конфига с заданным интервалом
 	go func() {
-		err := rss.GoNews(filename, chanPosts, chanErrs)
+		err := rss.GoNews(configURL, chanPosts, chanErrs)
 		if err != nil {
 			log.Fatal(err)
 		}
