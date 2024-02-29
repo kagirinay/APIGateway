@@ -22,6 +22,4 @@ type Interface interface {
 	PostSearchILIKE(keyWord string, limit, offset int) ([]Post, Pagination, error) // Поиск по заголовку
 	PostsCreation([]Post) error                                                    // Создание n-ого кол-ва публикаций
 	PostDetail(id int) (Post, error)                                               // Детальный вывод
-	CreateGonewsTable() error
-	DropGonewsTable() error
 }

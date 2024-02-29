@@ -28,37 +28,16 @@ func New(ctx context.Context, constr string) (*Store, error) {
 	return &s, err
 }
 
-// AllPosts Выводит все существующие новости.
-func (s *Store) AllPosts(n int) ([]storage.Post, error) {
-	rows, err := s.db.Query(context.Background(), `
-		SELECT id, title, content, publishedAt, link FROM news
-		ORDER BY publishedAt DESC
-		LIMIT $1;
-		`, n)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var posts []storage.Post
-	// Итерирование по результату выполнения запроса и сканирование каждой строки в переменную.
-	for rows.Next() {
-		var t storage.Post
-		err = rows.Scan(
-			&t.ID,
-			&t.Title,
-			&t.Content,
-			&t.PublishedAt,
-			&t.Link,
-		)
+// PostsCreation Создание n-ого кол-ва публикаций
+func (p *Store) PostsCreation(posts []storage.Post) error {
+	for _, post := range posts {
+		err := p.AddPost(post)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		// Добавление переменной в массив результатов.
-		posts = append(posts, t)
 	}
 
-	//Важно не забыть проверить rows.Err()
-	return posts, rows.Err()
+	return nil
 }
 
 // AddPost создаёт новую запись.
