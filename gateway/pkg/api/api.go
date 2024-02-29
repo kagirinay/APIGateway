@@ -1,12 +1,11 @@
 package api
 
 import (
+	"APIGateway/config"
 	"bytes"
 	"encoding/json"
-	config "gateway/configs"
 	"github.com/gorilla/mux"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -32,6 +31,7 @@ func New(cfg *config.Config, portNews, portCensor, portComment string) *API {
 		portComment: portComment,
 	}
 	api.endpoints()
+
 	return &api
 }
 
@@ -54,6 +54,7 @@ type ResponseDetailed struct {
 
 // Router возвращает маршрутизатор запросов.
 func (api *API) Router() *mux.Router {
+
 	return api.r
 }
 
@@ -64,7 +65,6 @@ func (api *API) endpoints() {
 	api.r.HandleFunc("/news/search", api.newsDetailedHandler).Methods(http.MethodGet, http.MethodOptions)
 	api.r.HandleFunc("/comments/add", api.addCommentHandler).Methods(http.MethodPost, http.MethodOptions)
 	api.r.HandleFunc("/comments/del", api.delCommentHandler).Methods(http.MethodDelete, http.MethodOptions)
-
 }
 
 func (api *API) newsHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,16 +72,13 @@ func (api *API) newsHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	}
 	portNews := api.portNews
-
 	// Создаем прокси-сервер для первого микросервиса
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
 		Host:   "localhost" + portNews, // адрес первого микросервиса
 	})
-
 	// Проксируем запрос к первому микросервису
 	proxy.ServeHTTP(w, r)
-
 }
 
 func (api *API) newsLatestHandler(w http.ResponseWriter, r *http.Request) {
@@ -89,16 +86,13 @@ func (api *API) newsLatestHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	}
 	portNews := api.portNews
-
 	// Создаем прокси-сервер для первого микросервиса
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
 		Host:   "localhost" + portNews, // адрес первого микросервиса
 	})
-
 	// Проксируем запрос к первому микросервису
 	proxy.ServeHTTP(w, r)
-
 }
 
 func (api *API) newsDetailedHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,20 +101,17 @@ func (api *API) newsDetailedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	portNews := api.portNews
 	portComment := api.portComment
-
 	idParam := r.URL.Query().Get("id")
 	if idParam == "" {
 		http.Error(w, "параметры поиска обязательны", http.StatusBadRequest)
 		return
 	}
-
 	chNews := make(chan *http.Response, 2)
 	chComments := make(chan *http.Response, 2)
 	chErr := make(chan error, 2)
 	var response ResponseDetailed
 	var wg sync.WaitGroup
 	wg.Add(2)
-
 	go func() {
 		defer wg.Done()
 		// Отправляем запрос на порт 8081
@@ -128,7 +119,6 @@ func (api *API) newsDetailedHandler(w http.ResponseWriter, r *http.Request) {
 		chErr <- err
 		chNews <- resp1
 	}()
-
 	go func() {
 		defer wg.Done()
 		// Отправляем запрос на порт 8082
@@ -136,40 +126,35 @@ func (api *API) newsDetailedHandler(w http.ResponseWriter, r *http.Request) {
 		chErr <- err
 		chComments <- resp2
 	}()
-
 	wg.Wait()
 	close(chErr)
-
 	for err := range chErr {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
-
 block:
 	for {
 		select {
 		case respNews := <-chNews:
-			body, err := ioutil.ReadAll(respNews.Body)
+			body, err := io.ReadAll(respNews.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			_ = json.Unmarshal(body, &response.NewsDetailed)
 		case respComment := <-chComments:
-			body, err := ioutil.ReadAll(respComment.Body)
+			body, err := io.ReadAll(respComment.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			_ = json.Unmarshal(body, &response.Comments)
+			json.Unmarshal(body, &response.Comments)
 		default:
 			break block
 		}
-
 	}
-
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -183,29 +168,24 @@ func (api *API) addCommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	portCensor := api.portCensor
 	portComment := api.portComment
-
-	bodyBytes, _ := ioutil.ReadAll(r.Body)
+	bodyBytes, _ := io.ReadAll(r.Body)
 	r.Body.Close()
-	Body1 := ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-	Body := ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
+	Body1 := io.NopCloser(bytes.NewBuffer(bodyBytes))
+	Body := io.NopCloser(bytes.NewBuffer(bodyBytes))
 	respCensor, err := MakeRequest(r, http.MethodPost, "http://localhost"+portCensor+"/comments/check", Body1)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	if respCensor.StatusCode != 200 {
 		http.Error(w, "неправильное содержание комментария", respCensor.StatusCode)
 		return
 	}
-
 	resp, err := MakeRequest(r, http.MethodPost, "http://localhost"+portComment+"/comments/add", Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	for name, values := range resp.Header {
 		w.Header()[name] = values
 	}
@@ -218,13 +198,11 @@ func (api *API) delCommentHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	}
 	portComment := api.portComment
-
 	// Создаем прокси-сервер для первого микросервиса
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
 		Host:   "localhost" + portComment, // адрес микросервиса
 	})
-
 	// Проксируем запрос к первому микросервису
 	proxy.ServeHTTP(w, r)
 }
@@ -236,5 +214,6 @@ func MakeRequest(req *http.Request, method, url string, body io.Reader) (*http.R
 		return nil, err
 	}
 	r.Header = req.Header
+
 	return client.Do(r)
 }

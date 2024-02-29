@@ -12,6 +12,7 @@ type loggingResponseWriter struct {
 }
 
 func NewLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
+
 	return &loggingResponseWriter{w, http.StatusOK}
 }
 
@@ -33,10 +34,8 @@ func Middle(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		lrw := NewLoggingResponseWriter(w)
 		next.ServeHTTP(lrw, req)
-
 		statusCode := lrw.statusCode
 		log.Printf("<-- client ip: %s, method: %s, url: %s, status code: %d %s, trace id: %s",
 			req.RemoteAddr, req.Method, req.URL.Path, statusCode, http.StatusText(statusCode), reqID)
-
 	})
 }
