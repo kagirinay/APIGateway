@@ -3,7 +3,6 @@ package main
 import (
 	"APIGateway/aggregator/config"
 	"APIGateway/aggregator/pkg/api"
-	"APIGateway/aggregator/pkg/conf"
 	"APIGateway/aggregator/pkg/middl"
 	"APIGateway/aggregator/pkg/rss"
 	"APIGateway/aggregator/pkg/storage"
@@ -13,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
@@ -30,14 +30,14 @@ func init() {
 	}
 }
 
-const (
-	configURL = "./cmd/server/config.json"
-)
+//const (
+//	configURL = "./cmd/server/config.json"
+//)
 
 func main() {
+	filename := filepath.Join("aggregator", "cmd", "server", "config.json")
 	// Создаём объект сервера.
 	var srv server
-	conf.NewConfig()
 	cfg := config.New()
 	// Адрес базы данных
 	dbURL := cfg.News.URLdb
@@ -61,7 +61,7 @@ func main() {
 	chanErrs := make(chan error)
 	// Чтение RSS-лент из конфига с заданным интервалом
 	go func() {
-		err := rss.GoNews(configURL, chanPosts, chanErrs)
+		err := rss.GoNews(filename, chanPosts, chanErrs)
 		if err != nil {
 			log.Fatal(err)
 		}

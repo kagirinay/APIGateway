@@ -3,6 +3,7 @@ package conf
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 )
 
 // ConJson Конфигурация приложения.
@@ -12,8 +13,10 @@ type ConJson struct {
 }
 
 func NewConfig() []ConJson {
+	filename := "config.json"
+	ext := filepath.Join(filename)
 	// loadConfiguration Чтение и раскодированние файла конфигурации.
-	bytes, err := os.ReadFile("C:/Users/kagir/GolandProjects/Task36a.4.1Aggregator/cmd/server/config.json")
+	bytes, err := os.ReadFile(ext)
 	if err != nil {
 		panic(err.Error())
 	}
