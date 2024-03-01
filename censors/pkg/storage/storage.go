@@ -8,6 +8,4 @@ type Stop struct {
 type Interface interface {
 	AllList() ([]Stop, error)
 	AddList(c Stop) error
-	CreateStopTable() error
-	DropStopTable() error
 }

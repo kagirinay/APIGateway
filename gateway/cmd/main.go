@@ -1,8 +1,9 @@
 package main
 
 import (
-	"APIGateway/aggregator/pkg/api"
-	"APIGateway/aggregator/pkg/middl"
+	"APIGateway/config"
+	"APIGateway/pkg/api"
+	"APIGateway/pkg/middl"
 	"flag"
 	"github.com/joho/godotenv"
 	"log"
@@ -23,13 +24,10 @@ func init() {
 }
 
 func main() {
-
-	// объект сервера
+	// Создаём объект сервера.
 	var srv server
-
 	// Конфигурация
 	cfg := config.New()
-
 	// Порт по умолчанию.
 	port := cfg.Gateway.AdrPort
 	// Порт по умолчанию.
@@ -38,36 +36,25 @@ func main() {
 	censorPort := cfg.Censor.AdrPort
 	// Порт по умолчанию.
 	comment := cfg.Comments.AdrPort
-
 	// Можно сменить Порт при запуске флагом < --gateway-port= >
 	portFlag := flag.String("gateway-port", port, "Порт для gateway сервиса")
-
 	// Можно сменить Порт при запуске флагом < --news-port= >
 	portFlagNews := flag.String("news-port", newsPort, "Порт для news сервиса")
-
 	// Можно сменить Порт при запуске флагом < --censor-port= >
 	portFlagCensor := flag.String("censor-port", censorPort, "Порт для censor сервиса")
-
 	// Можно сменить Порт при запуске флагом < --comments-port= >
 	portFlagComment := flag.String("comments-port", comment, "Порт для comments сервиса")
-
 	flag.Parse()
-
 	portGateway := *portFlag
 	portNews := *portFlagNews
 	portCensor := *portFlagCensor
 	portComment := *portFlagComment
-
 	// Создаём объект API и регистрируем обработчики.
 	srv.api = api.New(cfg, portNews, portCensor, portComment)
-
 	srv.api.Router().Use(middl.Middle)
-
 	log.Print("Запуск сервера http://127.0.0.1" + portGateway + "/news")
-
 	err := http.ListenAndServe(portGateway, srv.api.Router())
 	if err != nil {
 		log.Fatal("Не удалось запустить сервер шлюза. Error:", err)
 	}
-
 }

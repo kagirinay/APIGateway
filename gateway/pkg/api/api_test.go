@@ -1,26 +1,14 @@
 package api
 
 import (
-	"APIGateway/pkg/storage"
-	"APIGateway/pkg/storage/postgres"
 	"bytes"
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 func TestAPI_endpoints(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	// Создаём чистый объект API для теста.
-	dbase, _ := postgres.New(ctx, "postgres://postgres:password@192.168.58.133:5432/news")
-	err := dbase.AddPost(storage.Post{})
-	if err != nil {
-		return
-	}
-	api := New(dbase)
+	api := New()
 	var testBody1 = []byte(`{"newsID": 3,"content": "Тест qwerty "}`)
 	var testBody2 = []byte(`{"newsID": 3,"content": "Тест ups "}`)
 	var testBody3 = []byte(`{"id": 3}`)

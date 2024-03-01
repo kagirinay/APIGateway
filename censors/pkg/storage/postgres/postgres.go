@@ -1,9 +1,9 @@
 package postgres
 
 import (
-	"censorship/pkg/storage"
+	"APIGateway/pkg/storage"
 	"context"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 )
 
@@ -14,14 +14,13 @@ type Store struct {
 
 // New Конструктор объекта хранилища
 func New(ctx context.Context, constr string) (*Store, error) {
-
 	for {
-		_, err := pgxpool.Connect(ctx, constr)
+		_, err := pgxpool.New(ctx, constr)
 		if err == nil {
 			break
 		}
 	}
-	db, err := pgxpool.Connect(ctx, constr)
+	db, err := pgxpool.New(ctx, constr)
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +30,7 @@ func New(ctx context.Context, constr string) (*Store, error) {
 	return &s, nil
 }
 
+// AllList Выводит все комментарии.
 func (p *Store) AllList() ([]storage.Stop, error) {
 	rows, err := p.db.Query(context.Background(), "SELECT * FROM stop")
 	if err != nil {
@@ -46,9 +46,11 @@ func (p *Store) AllList() ([]storage.Stop, error) {
 		}
 		list = append(list, c)
 	}
+
 	return list, rows.Err()
 }
 
+// AddList Добавляет комментарии в стоп лист.
 func (p Store) AddList(c storage.Stop) error {
 	_, err := p.db.Exec(context.Background(),
 		"INSERT INTO stop (stop_list) VALUES ($1);", c.StopList)

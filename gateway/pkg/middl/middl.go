@@ -6,17 +6,17 @@ import (
 	"net/http"
 )
 
-type loggingResponseWriter struct {
+type LoggingResponseWriter struct {
 	http.ResponseWriter
 	statusCode int
 }
 
-func NewLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
+func NewLoggingResponseWriter(w http.ResponseWriter) *LoggingResponseWriter {
 
-	return &loggingResponseWriter{w, http.StatusOK}
+	return &LoggingResponseWriter{w, http.StatusOK}
 }
 
-func (lrw *loggingResponseWriter) WriteHeader(code int) {
+func (lrw *LoggingResponseWriter) WriteHeader(code int) {
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)
 }

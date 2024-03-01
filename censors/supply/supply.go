@@ -1,8 +1,8 @@
 package supply
 
 import (
-	"censorship/pkg/storage"
-	"io/ioutil"
+	"APIGateway/pkg/storage"
+	"io"
 	"os"
 	"strings"
 )
@@ -12,15 +12,16 @@ func StopList() ([]storage.Stop, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-
-	content, err := ioutil.ReadAll(f)
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+		}
+	}(f)
+	content, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
-
 	lines := strings.Split(string(content), "\n")
-
 	var sl []storage.Stop
 	for _, line := range lines {
 		trimmedLine := strings.TrimSpace(line)

@@ -12,27 +12,13 @@ import (
 	"sync"
 )
 
-// API приложения.
+// API Программный интерфейс сервера.
 type API struct {
-	r           *mux.Router    // Маршрутизатор запросов
+	router      *mux.Router    // Маршрутизатор запросов
 	cfg         *config.Config // Конфигурация
 	portNews    string         // Порт новостей
 	portCensor  string         // Порт цензуры
 	portComment string         // Порт комментарий
-}
-
-// New Конструктор API.
-func New(cfg *config.Config, portNews, portCensor, portComment string) *API {
-	api := API{
-		r:           mux.NewRouter(),
-		cfg:         cfg,
-		portNews:    portNews,
-		portCensor:  portCensor,
-		portComment: portComment,
-	}
-	api.endpoints()
-
-	return &api
 }
 
 type ResponseDetailed struct {
@@ -52,21 +38,37 @@ type ResponseDetailed struct {
 	} `json:"Comments"`
 }
 
-// Router возвращает маршрутизатор запросов.
+// New Конструктор объекта API.
+func New(cfg *config.Config, portNews, portCensor, portComment string) *API {
+	api := API{
+		router:      mux.NewRouter(),
+		cfg:         cfg,
+		portNews:    portNews,
+		portCensor:  portCensor,
+		portComment: portComment,
+	}
+	api.endpoints()
+
+	return &api
+}
+
+// Router Получение маршрутизатора запросов.
+// Требуется для передачи маршрутизатора веб-серверу.
 func (api *API) Router() *mux.Router {
 
-	return api.r
+	return api.router
 }
 
-// Регистрация обработчиков API.
+// Регистрация методов API в маршрутизаторе запросов.
 func (api *API) endpoints() {
-	api.r.HandleFunc("/news", api.newsHandler).Methods(http.MethodGet, http.MethodOptions)
-	api.r.HandleFunc("/news/latest", api.newsLatestHandler).Methods(http.MethodGet, http.MethodOptions)
-	api.r.HandleFunc("/news/search", api.newsDetailedHandler).Methods(http.MethodGet, http.MethodOptions)
-	api.r.HandleFunc("/comments/add", api.addCommentHandler).Methods(http.MethodPost, http.MethodOptions)
-	api.r.HandleFunc("/comments/del", api.delCommentHandler).Methods(http.MethodDelete, http.MethodOptions)
+	api.router.HandleFunc("/news", api.newsHandler).Methods(http.MethodGet, http.MethodOptions)
+	api.router.HandleFunc("/news/latest", api.newsLatestHandler).Methods(http.MethodGet, http.MethodOptions)
+	api.router.HandleFunc("/news/search", api.newsDetailedHandler).Methods(http.MethodGet, http.MethodOptions)
+	api.router.HandleFunc("/comments/add", api.addCommentHandler).Methods(http.MethodPost, http.MethodOptions)
+	api.router.HandleFunc("/comments/del", api.delCommentHandler).Methods(http.MethodDelete, http.MethodOptions)
 }
 
+// newsHandler
 func (api *API) newsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/news" {
 		http.NotFound(w, r)
@@ -75,26 +77,28 @@ func (api *API) newsHandler(w http.ResponseWriter, r *http.Request) {
 	// Создаем прокси-сервер для первого микросервиса
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
-		Host:   "localhost" + portNews, // адрес первого микросервиса
+		Host:   "localhost" + portNews, // адрес микросервиса
 	})
-	// Проксируем запрос к первому микросервису
+	// Проксируем запрос к микросервису
 	proxy.ServeHTTP(w, r)
 }
 
+// newsLatestHandler
 func (api *API) newsLatestHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/news/latest" {
 		http.NotFound(w, r)
 	}
 	portNews := api.portNews
-	// Создаем прокси-сервер для первого микросервиса
+	// Создаем прокси-сервер для микросервиса
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
-		Host:   "localhost" + portNews, // адрес первого микросервиса
+		Host:   "localhost" + portNews, // адрес микросервиса
 	})
-	// Проксируем запрос к первому микросервису
+	// Проксируем запрос к микросервису
 	proxy.ServeHTTP(w, r)
 }
 
+// newsDetailedHandler
 func (api *API) newsDetailedHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/news/search" {
 		http.NotFound(w, r)
@@ -150,7 +154,7 @@ block:
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			json.Unmarshal(body, &response.Comments)
+			_ = json.Unmarshal(body, &response.Comments)
 		default:
 			break block
 		}
@@ -169,7 +173,10 @@ func (api *API) addCommentHandler(w http.ResponseWriter, r *http.Request) {
 	portCensor := api.portCensor
 	portComment := api.portComment
 	bodyBytes, _ := io.ReadAll(r.Body)
-	r.Body.Close()
+	err := r.Body.Close()
+	if err != nil {
+		return
+	}
 	Body1 := io.NopCloser(bytes.NewBuffer(bodyBytes))
 	Body := io.NopCloser(bytes.NewBuffer(bodyBytes))
 	respCensor, err := MakeRequest(r, http.MethodPost, "http://localhost"+portCensor+"/comments/check", Body1)
@@ -190,7 +197,7 @@ func (api *API) addCommentHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header()[name] = values
 	}
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	_, _ = io.Copy(w, resp.Body)
 }
 
 func (api *API) delCommentHandler(w http.ResponseWriter, r *http.Request) {
@@ -198,12 +205,12 @@ func (api *API) delCommentHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	}
 	portComment := api.portComment
-	// Создаем прокси-сервер для первого микросервиса
+	// Создаем прокси-сервер для микросервиса
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
 		Host:   "localhost" + portComment, // адрес микросервиса
 	})
-	// Проксируем запрос к первому микросервису
+	// Проксируем запрос к микросервису
 	proxy.ServeHTTP(w, r)
 }
 
