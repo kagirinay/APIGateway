@@ -1,8 +1,8 @@
 package api
 
 import (
-	"APIGateway/aggregator/pkg/storage"
-	"APIGateway/aggregator/pkg/storage/postgres"
+	"APIGateway/pkg/storage"
+	"APIGateway/pkg/storage/postgres"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"

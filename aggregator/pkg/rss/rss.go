@@ -1,10 +1,10 @@
 package rss
 
 import (
-	"APIGateway/aggregator/pkg/storage"
+	"APIGateway/pkg/storage"
 	"encoding/json"
 	"encoding/xml"
-	"github.com/grokify/html-strip-tags-go"
+	strip "github.com/grokify/html-strip-tags-go"
 	"html/template"
 	"log"
 	"net/http"
@@ -43,7 +43,7 @@ func GoNews(configURL string, chanPosts chan<- []storage.Post, chanErrs chan<- e
 		return err
 	}
 	log.Println("начинаю смотреть rss-каналы")
-	//запуск горутины для каждой rss-ленты
+	//запуск го рутины для каждой rss-ленты
 	for i, r := range conf.Rss {
 		go func(r string, i int, chanPosts chan<- []storage.Post, chanErrs chan<- error) {
 			for {

@@ -1,42 +1,44 @@
 package api
 
 import (
-	"comments/pkg/storage"
+	"APIGateway/pkg/storage"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 )
 
-// API приложения.
+// API Программный интерфейс сервера.
 type API struct {
-	r  *mux.Router       // Маршрутизатор запросов
-	db storage.Interface // база данных
+	router *mux.Router       // Маршрутизатор запросов
+	db     storage.Interface // база данных
 }
 
-// New Конструктор API.
+// New Конструктор объекта API.
 func New(db storage.Interface) *API {
 	api := API{
-		r:  mux.NewRouter(),
-		db: db,
+		router: mux.NewRouter(),
+		db:     db,
 	}
-	api.r = mux.NewRouter()
+	api.router = mux.NewRouter()
 	api.endpoints()
+
 	return &api
 }
 
-// Router возвращает маршрутизатор запросов.
+// Router Получение маршрутизатора запросов.
+// Требуется для передачи маршрутизатора веб-серверу.
 func (api *API) Router() *mux.Router {
-	return api.r
+
+	return api.router
 }
 
 // Регистрация методов API в маршрутизаторе запросов.
 func (api *API) endpoints() {
-
 	// обработчиков новостей
-	api.r.HandleFunc("/comments", api.commentsHandler).Methods(http.MethodGet, http.MethodOptions)
-	api.r.HandleFunc("/comments/add", api.addCommentHandler).Methods(http.MethodPost, http.MethodOptions)
-	api.r.HandleFunc("/comments/del", api.deletePostHandler).Methods(http.MethodDelete, http.MethodOptions)
+	api.router.HandleFunc("/comments", api.commentsHandler).Methods(http.MethodGet, http.MethodOptions)
+	api.router.HandleFunc("/comments/add", api.addCommentHandler).Methods(http.MethodPost, http.MethodOptions)
+	api.router.HandleFunc("/comments/del", api.deletePostHandler).Methods(http.MethodDelete, http.MethodOptions)
 }
 
 // commentsHandler, который выводит заданное кол-во новостей.
@@ -44,9 +46,7 @@ func (api *API) endpoints() {
 func (api *API) commentsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	parseId := r.URL.Query().Get("news_id")
-
 	newsId, err := strconv.Atoi(parseId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -60,7 +60,7 @@ func (api *API) commentsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Добавление комментария
+// addCommentHandler Добавление комментария.
 func (api *API) addCommentHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -70,7 +70,6 @@ func (api *API) addCommentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusConflict)
 		return
 	}
-
 	err = api.db.AddComment(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -79,7 +78,7 @@ func (api *API) addCommentHandler(w http.ResponseWriter, r *http.Request) {
 	http.ResponseWriter.WriteHeader(w, http.StatusCreated)
 }
 
-// Удаление комента.
+// deletePostHandler Удаление комментария.
 func (api *API) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")

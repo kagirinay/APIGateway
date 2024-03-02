@@ -12,7 +12,7 @@ CREATE TABLE comments (
     id SERIAL PRIMARY KEY,
     news_id INT,
     content TEXT NOT NULL DEFAULT 'empty',
-    publishedAt BIGINT NOT NULL DEFAULT extract (epoch from now())
+    PubTime BIGINT NOT NULL DEFAULT extract (epoch from now())
 );
 CREATE TABLE IF NOT EXISTS stop (
     id SERIAL PRIMARY KEY,

@@ -31,7 +31,6 @@ type Gateway struct {
 // New возвращает новую Config структуру
 func New() *Config {
 	return &Config{
-
 		Censor: Censor{
 			AdrPort: getEnv("CENSOR_PORT", ""),
 			URLdb:   getEnv("CENSOR_DB", ""),

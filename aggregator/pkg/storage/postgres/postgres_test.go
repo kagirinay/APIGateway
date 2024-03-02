@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"APIGateway/aggregator/pkg/storage"
+	"APIGateway/pkg/storage"
 	"context"
 	"testing"
 	"time"
@@ -26,7 +26,7 @@ func TestStore_AddPost(t *testing.T) {
 		PublishedAt: 5,
 		Link:        "Ссылка",
 	}
-	dataBase.AddPost(post)
+	_ = dataBase.AddPost(post)
 	if err != nil {
 		t.Error(err)
 	}

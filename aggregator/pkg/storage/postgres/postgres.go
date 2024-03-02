@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"APIGateway/aggregator/pkg/storage"
+	"APIGateway/pkg/storage"
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

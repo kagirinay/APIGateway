@@ -1,12 +1,12 @@
 package main
 
 import (
-	"APIGateway/aggregator/config"
-	"APIGateway/aggregator/pkg/api"
-	"APIGateway/aggregator/pkg/middl"
-	"APIGateway/aggregator/pkg/rss"
-	"APIGateway/aggregator/pkg/storage"
-	"APIGateway/aggregator/pkg/storage/postgres"
+	"APIGateway/config"
+	"APIGateway/pkg/api"
+	"APIGateway/pkg/middl"
+	"APIGateway/pkg/rss"
+	"APIGateway/pkg/storage"
+	"APIGateway/pkg/storage/postgres"
 	"context"
 	"flag"
 	"github.com/joho/godotenv"
@@ -48,7 +48,7 @@ func main() {
 	// объект базы данных postgresql
 	db, err := postgres.New(ctx, dbURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	// Создаём объект API и регистрируем обработчики.
 	srv.api = api.New(db)
@@ -59,7 +59,7 @@ func main() {
 	go func() {
 		err := rss.GoNews(configURL, chanPosts, chanErrs)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}()
 	// вывод ошибок
@@ -73,6 +73,6 @@ func main() {
 	// запуск веб-сервера с API и приложением
 	err = http.ListenAndServe(portNews, srv.api.Router())
 	if err != nil {
-		log.Fatal("Не удалось запустить сервер. Ошибка:", err)
+		log.Println("Не удалось запустить сервер. Ошибка:", err)
 	}
 }

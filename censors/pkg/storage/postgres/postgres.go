@@ -27,6 +27,7 @@ func New(ctx context.Context, constr string) (*Store, error) {
 	s := Store{
 		db: db,
 	}
+
 	return &s, nil
 }
 
@@ -59,28 +60,5 @@ func (p Store) AddList(c storage.Stop) error {
 		return err
 	}
 
-	return nil
-}
-
-// CreateStopTable Создает таблицу
-func (p *Store) CreateStopTable() error {
-	_, err := p.db.Exec(context.Background(), `
-		CREATE TABLE IF NOT EXISTS stop (
-			id SERIAL PRIMARY KEY,
-			stop_list TEXT
-		);
-	`)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// DropStopTable Удаляет таблицу
-func (p *Store) DropStopTable() error {
-	_, err := p.db.Exec(context.Background(), "DROP TABLE IF EXISTS stop;")
-	if err != nil {
-		return err
-	}
 	return nil
 }

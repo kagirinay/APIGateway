@@ -1,8 +1,8 @@
 package api
 
 import (
-	"APIGateway/aggregator/pkg/storage"
-	"APIGateway/aggregator/pkg/storage/postgres"
+	"APIGateway/pkg/storage"
+	"APIGateway/pkg/storage/postgres"
 	"context"
 	"encoding/json"
 	"io"

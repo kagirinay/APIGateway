@@ -13,15 +13,14 @@ type ConJson struct {
 }
 
 func NewConfig() []ConJson {
-	filename := "config.json"
-	ext := filepath.Join(filename)
+	configURL := filepath.Join("config.json")
 	// loadConfiguration Чтение и раскодированние файла конфигурации.
-	bytes, err := os.ReadFile(ext)
+	bytes, err := os.ReadFile(configURL)
 	if err != nil {
 		panic(err.Error())
 	}
 	var conf []ConJson
-	json.Unmarshal(bytes, &conf)
+	_ = json.Unmarshal(bytes, &conf)
 	if err != nil {
 		panic(err.Error())
 	}

@@ -1,9 +1,9 @@
 package postgres
 
 import (
-	"comments/pkg/storage"
+	"APIGateway/pkg/storage"
 	"context"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Store Хранилище данных
@@ -13,24 +13,24 @@ type Store struct {
 
 // New Конструктор объекта хранилища
 func New(ctx context.Context, constr string) (*Store, error) {
-
 	for {
-		_, err := pgxpool.Connect(ctx, constr)
+		_, err := pgxpool.New(ctx, constr)
 		if err == nil {
 			break
 		}
 	}
-	db, err := pgxpool.Connect(ctx, constr)
+	db, err := pgxpool.New(ctx, constr)
 	if err != nil {
 		return nil, err
 	}
 	s := Store{
 		db: db,
 	}
+
 	return &s, nil
 }
 
-// AllComments выводит все коменты.
+// AllComments выводит все комментарии.
 func (p *Store) AllComments(newsID int) ([]storage.Comment, error) {
 	rows, err := p.db.Query(context.Background(), "SELECT * FROM comments WHERE news_id = $1;", newsID)
 	if err != nil {
@@ -46,50 +46,28 @@ func (p *Store) AllComments(newsID int) ([]storage.Comment, error) {
 		}
 		comments = append(comments, c)
 	}
+
 	return comments, rows.Err()
 }
 
-// AddComment добавляет коменты.
+// AddComment добавляет комментарий.
 func (p *Store) AddComment(c storage.Comment) error {
 	_, err := p.db.Exec(context.Background(),
 		"INSERT INTO comments (news_id,content) VALUES ($1,$2);", c.NewsID, c.Content)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
-// DeleteComment удаляет коменты.
+// DeleteComment удаляет комментарий.
 func (p *Store) DeleteComment(c storage.Comment) error {
 	_, err := p.db.Exec(context.Background(),
 		"DELETE FROM comments WHERE id=$1;", c.ID)
 	if err != nil {
 		return err
 	}
-	return nil
-}
 
-// CreateCommentTable Создает таблицу
-func (p *Store) CreateCommentTable() error {
-	_, err := p.db.Exec(context.Background(), `
-		CREATE TABLE IF NOT EXISTS comments (
-                id SERIAL PRIMARY KEY,
-                news_id INT,
-                content TEXT NOT NULL DEFAULT 'empty',
-                pubtime BIGINT NOT NULL DEFAULT extract (epoch from now())
-		);
-	`)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// DropCommentTable Удаляет таблицу
-func (p *Store) DropCommentTable() error {
-	_, err := p.db.Exec(context.Background(), "DROP TABLE IF EXISTS comments;")
-	if err != nil {
-		return err
-	}
 	return nil
 }

@@ -1,12 +1,12 @@
 package main
 
 import (
-	config "censorship/configs"
-	"censorship/pkg/api"
-	"censorship/pkg/middl"
-	"censorship/pkg/storage"
-	"censorship/pkg/storage/postgres"
-	"censorship/pkg/supply"
+	"APIGateway/config"
+	"APIGateway/pkg/api"
+	"APIGateway/pkg/middl"
+	"APIGateway/pkg/storage"
+	"APIGateway/pkg/storage/postgres"
+	"APIGateway/supply"
 	"context"
 	"flag"
 	"github.com/joho/godotenv"
@@ -30,10 +30,8 @@ func init() {
 }
 
 func main() {
-
 	// объект сервера
 	var srv server
-
 	cfg := config.New()
 	// Адрес базы данных
 	dbURL := cfg.Comments.URLdb
@@ -43,27 +41,12 @@ func main() {
 	portFlag := flag.String("censor-port", port, "Порт для censor сервиса")
 	flag.Parse()
 	portCensor := *portFlag
-
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-
 	// объект базы данных postgresql
 	db, err := postgres.New(ctx, dbURL)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Удаление таблицы stop если существует
-	err = db.DropStopTable()
-	if err != nil {
 		log.Println(err)
-		return
-	}
-	// Создание таблицы stop если не существует
-	err = db.CreateStopTable()
-	if err != nil {
-		log.Println(err)
-		return
 	}
 	// Получение списка для стоп листа из файла words.txt
 	stop, err := supply.StopList()
@@ -77,20 +60,14 @@ func main() {
 			log.Println(err)
 		}
 	}
-
 	// Инициализируем хранилище сервера конкретной БД.
 	srv.db = db
-
 	// Создаём объект API и регистрируем обработчики.
 	srv.api = api.New(srv.db)
-
 	srv.api.Router().Use(middl.Middle)
-
 	log.Print("Запуск сервера на http://127.0.0.1" + portCensor)
-
 	err = http.ListenAndServe(portCensor, srv.api.Router())
 	if err != nil {
-		log.Fatal("Не удалось запустить сервер шлюза. Error:", err)
+		log.Println("Не удалось запустить сервер шлюза. Error:", err)
 	}
-
 }
